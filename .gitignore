@@ -1,0 +1,13 @@
+.next
+node_modules
+out
+
+.DS_Store
+__screenshots__
+
+.swc
+.next
+node_modules
+.env
+.key
+tsconfig.tsbuildinfo

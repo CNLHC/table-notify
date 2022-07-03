@@ -1,3 +1,4 @@
+import { Spin } from "antd";
 import axios from "axios";
 import { useRouter } from "next/router";
 import React, { useEffect } from "react";
@@ -18,7 +19,11 @@ function Oauth() {
         .then(() => route.push("/"));
   }, [code, route, setRPCToken, setToken]);
 
-  return <div>oauth({code})</div>;
+  return (
+    <div className="w-[100vw] h-[100vh] flex justify-center items-center">
+      <Spin size="large"></Spin>
+    </div>
+  );
 }
 
 export default Oauth;

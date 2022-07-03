@@ -1,11 +1,8 @@
 import "reflect-metadata"
-import { Column, Entity, Index, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import type { Relation } from 'typeorm'
-
 import { DataSource } from "typeorm"
 import { config } from "dotenv";
-config()
 
 
 export type BaseTokenInfo = {
@@ -74,7 +71,10 @@ export class NotificationLog {
     context: any
 
     @ManyToOne(e => EndpointUserModel, (t) => t.logs, { eager: true })
-    user: EndpointUserModel
+    user: Relation<EndpointUserModel>
+
+    @ManyToOne(e => UserModel, { eager: true })
+    tenant: Relation<UserModel>
 
 }
 

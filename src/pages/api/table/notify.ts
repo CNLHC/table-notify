@@ -3,15 +3,24 @@ import GetConnect, { AuthMiddleware } from "../../../libs/nextconnect";
 import * as XLSX from "xlsx";
 import { check_should_send, extract_data_from_xlsx, get_blob_or_fail, TDataRow } from "../../../libs/thu";
 import { send_msg_thu } from "../../../libs/sms";
-import { EndpointUserModel, getDatasource, NotificationLog } from "../../../libs/models";
+import { EndpointUserModel, getDatasource, NotificationLog, UserModel } from "../../../libs/models";
 import { PromisePool } from '@supercharge/promise-pool'
 
 
-export async function send_msg_and_log(r: TDataRow): Promise<boolean> {
+export async function send_msg_and_log(r: TDataRow, caller: UserModel): Promise<boolean> {
     const db = await getDatasource()
-    const people = await db.createQueryBuilder(EndpointUserModel, "endpoint_user").where("nature_key = :nature_key", { nature_key: r.id }).getOne()
-    const save_log = async (log: NotificationLog) => await db.createQueryBuilder(NotificationLog, "notification_log").insert().into(NotificationLog).values(log).execute()
-    const log = new NotificationLog
+    const people = await db.createQueryBuilder(EndpointUserModel, "endpoint_user")
+        .where("nature_key = :nature_key", { nature_key: r.id })
+        .getOne()
+    const save_log = async (log: NotificationLog) =>
+        await db.createQueryBuilder(NotificationLog, "notification_log")
+            .insert()
+            .into(NotificationLog)
+            .values(log)
+            .execute()
+
+    const log = new NotificationLog()
+    log.tenant = caller
     log.created_at = new Date()
 
     try {
@@ -21,14 +30,10 @@ export async function send_msg_and_log(r: TDataRow): Promise<boolean> {
                 input: r,
                 reason: "NoValidPhoneNumber"
             }
-            console.log(111, people)
             await save_log(log)
-
             return false
         }
         const res2 = await send_msg_thu({ name: people.name, phone: people.phone_number })
-
-
         if (res2.body.code?.toLowerCase() != "ok") {
             log.type = "sms_error"
             log.context = {
@@ -51,7 +56,6 @@ export async function send_msg_and_log(r: TDataRow): Promise<boolean> {
             reason: "Unknown",
             error: e.toString()
         }
-        console.log(322, e)
         await save_log(log)
         return false
     }
@@ -60,17 +64,15 @@ export async function send_msg_and_log(r: TDataRow): Promise<boolean> {
 const handler = GetConnect()
     .use(AuthMiddleware()).post(async (req, resp) => {
         const session = req.body.session
-
         const blob = await get_blob_or_fail(session)
         const book = XLSX.read(blob, { type: 'buffer' })
         const data = extract_data_from_xlsx(book)
         const should_send = data.filter(check_should_send)
-
         const { results, errors } = await PromisePool
             .for(should_send)
             .withConcurrency(50)
             .process(async row => {
-                return await send_msg_and_log(row)
+                return await send_msg_and_log(row, req.user)
             })
         resp.json({
             status: 'ok',

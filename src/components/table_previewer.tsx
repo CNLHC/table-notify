@@ -19,7 +19,7 @@ const TablePreviewer = ({ data }: { data?: SessionInfo }) => {
     );
   }, [data]);
 
-  const [notify_filter, setNotifyFilter] = useState<string[]>([]);
+  const [filter, setFilter] = useState<{ [key: string | number]: any[] }>({});
 
   const columns = useMemo(
     () =>
@@ -27,6 +27,7 @@ const TablePreviewer = ({ data }: { data?: SessionInfo }) => {
         {
           width: "15%",
           title: "是否提醒",
+          dataIndex: "should_notify",
           render: (text, record) => {
             if (should_notify.has(row_to_key(record))) {
               return <span>是</span>;
@@ -37,7 +38,7 @@ const TablePreviewer = ({ data }: { data?: SessionInfo }) => {
             { text: "否", value: "否" },
           ],
           filterMultiple: false,
-          filteredValue: notify_filter,
+          filteredValue: filter["should_notify"],
           onFilter: (value, record) =>
             value == "是"
               ? should_notify.has(row_to_key(record))
@@ -49,6 +50,8 @@ const TablePreviewer = ({ data }: { data?: SessionInfo }) => {
         {
           title: "检测日期",
           dataIndex: "new_date",
+
+          filteredValue: filter["new_date"],
           onFilter: (value: moment.Moment, record) => {
             return value.isSame(moment(record.new_date), "day");
           },
@@ -77,6 +80,7 @@ const TablePreviewer = ({ data }: { data?: SessionInfo }) => {
             },
           ],
           filterResetToDefaultFilteredValue: true,
+          filteredValue: filter["is_checked"],
           onFilter: (value: string, record) => record.is_checked === value,
         },
 
@@ -87,15 +91,23 @@ const TablePreviewer = ({ data }: { data?: SessionInfo }) => {
           // ellipsis: true,
         },
       ] as ColumnProps<TDataRow>[],
-    [all_date, notify_filter, should_notify]
+    [all_date, filter, should_notify]
   );
   return (
     <>
       <Radio.Group
-        onChange={(e) => {
-          const value = e.target.value;
-          if (value === "") setNotifyFilter([]);
-          else setNotifyFilter([e.target.value as string]);
+        onChange={(k) => {
+          const value = k.target.value;
+          if (value === "")
+            setFilter((e) => ({
+              ...e,
+              should_notify: [],
+            }));
+          else
+            setFilter((e) => ({
+              ...e,
+              should_notify: [k.target.value as string],
+            }));
         }}
       >
         <Radio value="是">
@@ -113,7 +125,7 @@ const TablePreviewer = ({ data }: { data?: SessionInfo }) => {
         size="small"
         dataSource={data?.all}
         onChange={(a, filters) => {
-          console.table(filters);
+          setFilter(filters as any);
         }}
         pagination={{
           showTitle: true,

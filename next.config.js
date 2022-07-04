@@ -1,8 +1,10 @@
 module.exports = {
   publicRuntimeConfig: {
     appid: "AK20220629OXCAPL",
-    // redirect: "http://tablenotify-test.cnworkshop.xyz:23000/oauth",
-    redirect: "http://localhost:3000/oauth",
+    redirect:
+      process.env.NODE_ENV == "production"
+        ? process.env["DEPLOY_ADDR"]
+        : "http://localhost:3000/oauth",
   },
   serverRuntimeConfig: {
     appkey: process.env["WPS_APPKEY"],

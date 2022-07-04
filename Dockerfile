@@ -5,6 +5,6 @@ COPY yarn.lock package.json /code/
 RUN yarn 
 
 COPY . .
+ENV NODE_ENV=production
 RUN yarn next build
-COPY .env .
 CMD yarn next start

@@ -23,7 +23,7 @@ const History = () => {
               case "sms_send":
                 return <Tag color={"success"}> 短信提醒成功</Tag>;
               case "sms_error":
-                return <Tag color={"success"}> 短信提醒失败</Tag>;
+                return <Tag color={"error"}> 短信提醒失败</Tag>;
             }
           },
         },

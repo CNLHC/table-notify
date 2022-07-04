@@ -28,9 +28,11 @@ const handler = GetConnect().get(async (req, res) => {
         expire_at: moment().add(token_resp.token.expires_in, 's').toISOString()
     }
     if (existed_user) {
-        await db.createQueryBuilder(UserModel, 'um').update().set({
-            token_store: () => `jsonb_set(token_store, '{wps_token}', '${JSON.stringify(store)}')`
-        }).execute()
+        await db.createQueryBuilder(UserModel, 'um')
+            .update()
+            .where("uuid = :uuid", { uuid: existed_user.uuid })
+            .set({ token_store: () => `jsonb_set(token_store, '{wps_token}', '${JSON.stringify(store)}')` })
+            .execute()
         uuid = existed_user.uuid
     } else {
         const newUser = new UserModel()

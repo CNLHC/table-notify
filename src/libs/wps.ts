@@ -96,3 +96,18 @@ export function handle_wps_error(e: any) {
     });
   }
 }
+
+export function refresh_token(req: {
+  appid: string
+  appkey: string
+  refresh_token: string
+
+}) {
+  return axios.post<RefreshTokenResp>('https://openapi.wps.cn/oauthapi/v2/token/refresh', {}, { params: req }).then(e => e.data)
+}
+
+export interface RefreshTokenResp {
+  result: number;
+  token: Token;
+}
+

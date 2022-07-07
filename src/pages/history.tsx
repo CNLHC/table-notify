@@ -1,5 +1,6 @@
 import { Button, Tag } from "antd";
 import Table, { ColumnProps } from "antd/lib/table";
+import _ from "lodash";
 import moment from "moment";
 import { useRouter } from "next/router";
 import React, { useMemo } from "react";
@@ -10,11 +11,23 @@ import { NotificationLog } from "../libs/models";
 const History = () => {
   const { cli } = useClient();
   const { data } = useSWR("query-notification-history", async () =>
-    cli.get("/api/notify/history").then((e) => e.data)
+    cli
+      .get<{ data: NotificationLog[] }>("/api/notify/history")
+      .then((e) => e.data)
+  );
+  const all_date = useMemo(
+    () =>
+      _.uniq(data?.data.map((e) => moment(e.created_at).startOf("day"))) ?? [],
+    [data]
   );
   const columns = useMemo(
     () =>
       [
+        {
+          title: "id",
+          dataIndex: "id",
+          sorter: (a, b) => a.id - b.id,
+        },
         {
           title: "事件类型",
           dataIndex: "type",
@@ -34,12 +47,20 @@ const History = () => {
         {
           title: "时间",
           dataIndex: "created_at",
+          sorter: function (a, b) {
+            return moment(a.created_at).unix() - moment(b.created_at).unix();
+          },
+          filteredValue: all_date.map((e) => ({
+            text: moment(e).format("MM-DD"),
+            value: moment(e),
+          })),
+
           render(value, record, index) {
             return moment(value).format("YYYY-MM-DD HH:mm:ss");
           },
         },
       ] as ColumnProps<NotificationLog>[],
-    []
+    [all_date]
   );
   const router = useRouter();
   return (
@@ -57,6 +78,7 @@ const History = () => {
       <Table
         columns={columns}
         dataSource={data?.data}
+        rowKey={(e) => e.id}
         pagination={{ defaultPageSize: 40 }}
       ></Table>
     </div>
